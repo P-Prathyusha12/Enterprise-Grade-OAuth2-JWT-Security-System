@@ -1,0 +1,226 @@
+{
+  "info": {
+    "_postman_id": "oauth2-jwt-v2",
+    "name": "OAuth2 JWT Security System",
+    "description": "Complete API test collection. Run requests in order 1→N. Token is auto-saved after login.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "🔐 Auth",
+      "item": [
+        {
+          "name": "1. Login (admin)",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "var r = pm.response.json();",
+            "if(r.accessToken){ pm.environment.set('access_token', r.accessToken); pm.environment.set('refresh_token', r.refreshToken); console.log('✅ Tokens saved'); }",
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "pm.test('Has accessToken', () => pm.expect(r.accessToken).to.exist);"
+          ], "type": "text/javascript" }}],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"Admin@1234\"\n}" },
+            "url": { "raw": "{{base_url}}/auth/login", "host": ["{{base_url}}"], "path": ["auth","login"] }
+          }
+        },
+        {
+          "name": "2. Login (regular user)",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "var r = pm.response.json();",
+            "if(r.accessToken){ pm.environment.set('user_token', r.accessToken); }",
+            "pm.test('Status 200', () => pm.response.to.have.status(200));"
+          ], "type": "text/javascript" }}],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"username\": \"user\",\n  \"password\": \"User@1234\"\n}" },
+            "url": { "raw": "{{base_url}}/auth/login", "host": ["{{base_url}}"], "path": ["auth","login"] }
+          }
+        },
+        {
+          "name": "3. Register New User",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "pm.test('Success true', () => pm.expect(pm.response.json().success).to.be.true);"
+          ], "type": "text/javascript" }}],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"username\": \"newuser\",\n  \"password\": \"Pass@1234\",\n  \"email\": \"newuser@example.com\",\n  \"tenantName\": \"tenant-a\"\n}" },
+            "url": { "raw": "{{base_url}}/auth/register", "host": ["{{base_url}}"], "path": ["auth","register"] }
+          }
+        },
+        {
+          "name": "4. Refresh Token",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "var r = pm.response.json();",
+            "if(r.accessToken){ pm.environment.set('access_token', r.accessToken); console.log('✅ Token refreshed'); }",
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "pm.test('Has new accessToken', () => pm.expect(r.accessToken).to.exist);"
+          ], "type": "text/javascript" }}],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"refreshToken\": \"{{refresh_token}}\"\n}" },
+            "url": { "raw": "{{base_url}}/auth/refresh", "host": ["{{base_url}}"], "path": ["auth","refresh"] }
+          }
+        },
+        {
+          "name": "5. Logout",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "pm.environment.unset('access_token');",
+            "pm.environment.unset('refresh_token');",
+            "console.log('✅ Logged out — tokens cleared');"
+          ], "type": "text/javascript" }}],
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}", "type": "string" }] },
+            "method": "POST",
+            "header": [],
+            "url": { "raw": "{{base_url}}/auth/logout", "host": ["{{base_url}}"], "path": ["auth","logout"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "👤 Users",
+      "item": [
+        {
+          "name": "6. Get All Users (ADMIN)",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "pm.test('Response is array', () => pm.expect(pm.response.json()).to.be.an('array'));"
+          ], "type": "text/javascript" }}],
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}", "type": "string" }] },
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/users", "host": ["{{base_url}}"], "path": ["users"] }
+          }
+        },
+        {
+          "name": "7. Get My Profile",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "pm.test('Has username', () => pm.expect(pm.response.json().username).to.exist);"
+          ], "type": "text/javascript" }}],
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}", "type": "string" }] },
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/users/me", "host": ["{{base_url}}"], "path": ["users","me"] }
+          }
+        },
+        {
+          "name": "8. Get User By ID",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));"
+          ], "type": "text/javascript" }}],
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}", "type": "string" }] },
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/users/1", "host": ["{{base_url}}"], "path": ["users","1"] }
+          }
+        },
+        {
+          "name": "9. Delete User (ADMIN)",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200 or 404', () => pm.expect([200,404]).to.include(pm.response.code));"
+          ], "type": "text/javascript" }}],
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}", "type": "string" }] },
+            "method": "DELETE",
+            "url": { "raw": "{{base_url}}/users/3", "host": ["{{base_url}}"], "path": ["users","3"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🛡️ Admin",
+      "item": [
+        {
+          "name": "10. Admin Dashboard",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "pm.test('Has totalUsers', () => pm.expect(pm.response.json().totalUsers).to.exist);"
+          ], "type": "text/javascript" }}],
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}", "type": "string" }] },
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/admin/dashboard", "host": ["{{base_url}}"], "path": ["admin","dashboard"] }
+          }
+        },
+        {
+          "name": "11. Get All Audit Logs",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));"
+          ], "type": "text/javascript" }}],
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}", "type": "string" }] },
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/admin/audit-logs", "host": ["{{base_url}}"], "path": ["admin","audit-logs"] }
+          }
+        },
+        {
+          "name": "12. Audit Logs by Username",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}", "type": "string" }] },
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/admin/audit-logs/admin", "host": ["{{base_url}}"], "path": ["admin","audit-logs","admin"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🔴 Security Edge Cases",
+      "item": [
+        {
+          "name": "13. No Token → 401",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Should be 401', () => pm.response.to.have.status(401));"
+          ], "type": "text/javascript" }}],
+          "request": { "method": "GET", "url": { "raw": "{{base_url}}/users", "host": ["{{base_url}}"], "path": ["users"] } }
+        },
+        {
+          "name": "14. Invalid Token → 401",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Should be 401', () => pm.response.to.have.status(401));"
+          ], "type": "text/javascript" }}],
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "this.is.invalid", "type": "string" }] },
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/users", "host": ["{{base_url}}"], "path": ["users"] }
+          }
+        },
+        {
+          "name": "15. User accessing Admin → 403",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Should be 403', () => pm.response.to.have.status(403));"
+          ], "type": "text/javascript" }}],
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{user_token}}", "type": "string" }] },
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/admin/dashboard", "host": ["{{base_url}}"], "path": ["admin","dashboard"] }
+          }
+        },
+        {
+          "name": "16. Wrong Password → 401",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Should be 401', () => pm.response.to.have.status(401));"
+          ], "type": "text/javascript" }}],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"wrongpassword\"\n}" },
+            "url": { "raw": "{{base_url}}/auth/login", "host": ["{{base_url}}"], "path": ["auth","login"] }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:8080", "type": "string" },
+    { "key": "access_token", "value": "", "type": "string" },
+    { "key": "refresh_token", "value": "", "type": "string" },
+    { "key": "user_token", "value": "", "type": "string" }
+  ]
+}
